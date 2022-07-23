@@ -4,6 +4,8 @@ Zig updator
 
 ## Usage
 
+NOTE: The path will be removed forcibly. Please run carefully.
+
 ```
 $ usage: zig-update [type] [path]
   aarch64-linux
