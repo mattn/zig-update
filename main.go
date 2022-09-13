@@ -26,6 +26,12 @@ func copyFileTgz(base string, from *tar.Reader, header *tar.Header) error {
 	tok = append(tok, strings.Split(header.Name, "/")[1:]...)
 	fullpath := filepath.Join(tok...)
 
+	fmt.Println(fullpath)
+
+	if header.FileInfo().Mode().IsDir() {
+		return os.MkdirAll(fullpath, 0755)
+	}
+
 	newf, err := os.Create(fullpath)
 	if err != nil {
 		return err
@@ -48,9 +54,6 @@ func extractTgz(base string, resp *http.Response) error {
 		cur, err := r.Next()
 		if err != nil {
 			return err
-		}
-		if cur.Typeflag != tar.TypeReg {
-			return nil
 		}
 
 		err = copyFileTgz(base, r, cur)
@@ -127,9 +130,6 @@ func extractTXZ(base string, resp *http.Response) error {
 		cur, err := r.Next()
 		if err != nil {
 			return err
-		}
-		if cur.Typeflag != tar.TypeReg {
-			return nil
 		}
 
 		err = copyFileTgz(base, r, cur)
