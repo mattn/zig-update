@@ -7,6 +7,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/fs"
@@ -14,12 +15,19 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
 	bufra "github.com/avvmoto/buf-readerat"
 	"github.com/ulikunitz/xz"
 )
+
+const name = "zig-update"
+
+const version = "0.0.1"
+
+var revision = "HEAD"
 
 func copyFileTgz(base string, from *tar.Reader, header *tar.Header) error {
 	tok := []string{base}
@@ -154,6 +162,16 @@ func contains(a []string, i string) bool {
 }
 
 func main() {
+	var showVersion bool
+
+	flag.BoolVar(&showVersion, "v", false, "Print the version")
+	flag.Parse()
+
+	if showVersion {
+		fmt.Printf("%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
+		return
+	}
+
 	resp, err := http.Get("https://ziglang.org/download/index.json")
 	if err != nil {
 		log.Fatal(err)
@@ -175,15 +193,16 @@ func main() {
 	}
 	sort.Strings(keys)
 
-	if len(os.Args) != 3 {
+	if flag.NArg() != 2 {
 		fmt.Fprintf(os.Stderr, "usage: %s [type] [path]\n", os.Args[0])
 		for _, v := range keys {
 			fmt.Fprintf(os.Stderr, "  %s\n", v)
 		}
 		os.Exit(1)
 	}
-	typ := os.Args[1]
-	base := os.Args[2]
+
+	typ := flag.Arg(0)
+	base := flag.Arg(1)
 
 	if _, ok := m["master"].(map[string]any)[typ]; !ok {
 		log.Fatal("unsupported type: ", typ)
