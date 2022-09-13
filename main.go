@@ -18,12 +18,19 @@ import (
 	"strings"
 
 	bufra "github.com/avvmoto/buf-readerat"
+	"github.com/ulikunitz/xz"
 )
 
 func copyFileTgz(base string, from *tar.Reader, header *tar.Header) error {
 	tok := []string{base}
 	tok = append(tok, strings.Split(header.Name, "/")[1:]...)
 	fullpath := filepath.Join(tok...)
+
+	fmt.Println(fullpath)
+
+	if header.FileInfo().Mode().IsDir() {
+		return os.MkdirAll(fullpath, 0755)
+	}
 
 	newf, err := os.Create(fullpath)
 	if err != nil {
@@ -47,9 +54,6 @@ func extractTgz(base string, resp *http.Response) error {
 		cur, err := r.Next()
 		if err != nil {
 			return err
-		}
-		if cur.Typeflag != tar.TypeReg {
-			return nil
 		}
 
 		err = copyFileTgz(base, r, cur)
@@ -116,6 +120,30 @@ func extractZip(base string, resp *http.Response) error {
 	return nil
 }
 
+func extractTXZ(base string, resp *http.Response) error {
+	r1, err := xz.NewReader(resp.Body)
+	if err != nil {
+		return err
+	}
+	r := tar.NewReader(r1)
+	for {
+		cur, err := r.Next()
+		if err != nil {
+			return err
+		}
+
+		err = copyFileTgz(base, r, cur)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+
+}
+
 func contains(a []string, i string) bool {
 	for _, v := range a {
 		if v == i {
@@ -177,6 +205,8 @@ func main() {
 		err = extractTgz(base, resp)
 	} else if strings.HasSuffix(uri, ".zip") {
 		err = extractZip(base, resp)
+	} else if strings.HasSuffix(uri, ".xz") {
+		err = extractTXZ(base, resp)
 	} else {
 		err = fmt.Errorf("unsupported archive: %v", uri)
 	}
