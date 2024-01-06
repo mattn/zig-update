@@ -229,7 +229,7 @@ func main() {
 	} else {
 		err = fmt.Errorf("unsupported archive: %v", uri)
 	}
-	if err != nil {
+	if err != nil && err != io.EOF {
 		log.Fatal(err)
 	}
 }
