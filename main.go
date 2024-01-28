@@ -26,7 +26,7 @@ import (
 
 const name = "zig-update"
 
-const version = "0.0.1"
+const version = "0.0.3"
 
 var revision = "HEAD"
 
