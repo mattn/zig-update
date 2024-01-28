@@ -225,11 +225,11 @@ func main() {
 	typ := flag.Arg(0)
 	base := flag.Arg(1)
 
-	if _, ok := m["master"].(map[string]any)[typ]; !ok {
+	if _, ok := mm.(map[string]any)[typ]; !ok {
 		log.Fatal("unsupported type: ", typ)
 	}
 
-	uri := m["master"].(map[string]any)[typ].(map[string]any)["tarball"].(string)
+	uri := mm.(map[string]any)[typ].(map[string]any)["tarball"].(string)
 	resp, err = http.Get(uri)
 	if err != nil {
 		log.Fatal(err)
