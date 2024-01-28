@@ -21,6 +21,7 @@ import (
 
 	bufra "github.com/avvmoto/buf-readerat"
 	"github.com/ulikunitz/xz"
+	"golang.org/x/mod/semver"
 )
 
 const name = "zig-update"
@@ -163,8 +164,10 @@ func contains(a []string, i string) bool {
 
 func main() {
 	var showVersion bool
+	var downloadVersion string
 
 	flag.BoolVar(&showVersion, "v", false, "Print the version")
+	flag.StringVar(&downloadVersion, "d", "master", "Zig version to download")
 	flag.Parse()
 
 	if showVersion {
@@ -184,18 +187,36 @@ func main() {
 		log.Fatal(err)
 	}
 
-	keys := []string{}
-	for k := range m["master"].(map[string]any) {
+	versions := []string{}
+	for k := range m {
+		versions = append(versions, "v"+k)
+	}
+	semver.Sort(versions)
+	for i := 0; i < len(m); i++ {
+		versions[i] = versions[i][1:]
+	}
+
+	mm, ok := m[downloadVersion]
+	if !ok {
+		log.Fatal("Zig version not exists")
+	}
+	archs := []string{}
+	for k := range mm.(map[string]any) {
 		if contains([]string{"version", "date", "docs", "stdDocs", "src"}, k) {
 			continue
 		}
-		keys = append(keys, k)
+		archs = append(archs, k)
 	}
-	sort.Strings(keys)
+	sort.Strings(archs)
 
 	if flag.NArg() != 2 {
 		fmt.Fprintf(os.Stderr, "usage: %s [type] [path]\n", os.Args[0])
-		for _, v := range keys {
+		fmt.Fprintln(os.Stderr, "Arch:")
+		for _, v := range archs {
+			fmt.Fprintf(os.Stderr, "  %s\n", v)
+		}
+		fmt.Fprintln(os.Stderr, "Version:")
+		for _, v := range versions {
 			fmt.Fprintf(os.Stderr, "  %s\n", v)
 		}
 		os.Exit(1)
